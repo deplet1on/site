@@ -1,0 +1,617 @@
+/* САМ САЙТ */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: white;
+    line-height: 1.6;
+    background-image: url('img/fon.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-color: rgba(0, 0, 0, 0.6);
+    min-height: 100vh;
+}
+
+/* ШАПКА */
+header {
+    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6));
+    background-size: cover;
+    background-position: center;
+    color: white;
+    position: relative; /* Добавлено */
+}
+
+.main-nav a {
+    white-space: normal; /* Исправлено с nowrap */
+}
+
+/* ОСНОВНОЙ КОНТЕЙНЕР */
+.centered-section {
+    display: flex;
+    flex-direction: column;
+    max-width: 1200px;
+    margin: 0px auto;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.6);
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* КАРТА */
+.map-section {
+    padding: 15px;
+    border-radius: 8px;
+    color: white;
+    text-align: center;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.map-section h2 {
+    font-size: clamp(1.2rem, 3vw, 1.8rem);
+    margin-bottom: 15px;
+}
+
+#map {
+    height: 300px;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    position: relative;
+}
+
+/* ОТЗЫВЫ */
+.reviews {
+    color: white;
+    text-align: center;
+    padding: 15px;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.reviews h2 {
+    font-size: clamp(1.2rem, 3vw, 1.8rem);
+    margin-bottom: 20px;
+}
+
+.swiper {
+    width: 100%;
+    padding: 20px 0;
+}
+
+.swiper-slide {
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: left;
+    transition: transform 0.3s ease-in-out;
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+}
+
+.swiper-slide:hover {
+    transform: scale(1.03);
+}
+
+.review-image {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.swiper-slide h3 {
+    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+    margin: 0 0 8px;
+}
+
+.swiper-slide p {
+    font-size: clamp(0.8rem, 2vw, 0.9rem);
+    line-height: 1.4;
+    margin-bottom: 10px;
+    flex-grow: 1;
+}
+
+.rating {
+    margin-top: 8px;
+}
+
+.rating i {
+    color: #f9c74f;
+    font-size: 14px;
+}
+
+/* ФОРМА ОТЗЫВОВ И FAQ */
+.add-review,
+.faq-section {
+    flex: 1;
+    min-width: 300px;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+.add-review h2,
+.faq-section h2 {
+    text-align: center;
+    font-size: clamp(1.2rem, 3vw, 1.5rem);
+    margin-bottom: 20px;
+}
+
+.review-form {
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: white;
+    font-size: clamp(0.9rem, 2vw, 1rem);
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+.review-form button {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background-color: #29b6f6;
+    color: white;
+    font-size: 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.review-form button:hover {
+    background-color: #0277bd;
+}
+.toggle-label a {
+    word-break: break-word;
+    display: inline-block;
+    line-height: 1.4;
+}
+/* FAQ */
+.faq-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+.faq-wrapper {
+    padding: 15px;
+    border-radius: 5px;
+}
+.faq-item {
+    padding: 10px;
+    border-radius: 8px;
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+.faq-item:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.faq-question {
+    background-color: #29b6f6;
+    color: white;
+    font-size: clamp(0.9rem, 2.5vw, 1rem);
+    font-weight: bold;
+    padding: 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: background-color 0.3s ease;
+    position: relative;
+}
+
+.faq-question::after {
+    content: '+';
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    font-weight: bold;
+    transition: transform 0.3s ease;
+}
+
+.faq-question.open::after {
+    content: '-';
+}
+
+.faq-question:hover {
+    background-color: #0277bd;
+}
+
+.faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    padding: 0 12px;
+}
+
+.faq-answer.open {
+    max-height: 200px;
+    padding: 15px 12px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 0 0 4px 4px;
+}
+
+.faq-answer p {
+    font-size: clamp(0.8rem, 2vw, 0.9rem);
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* ВТОРАЯ СТРАНИЦА - ШАГИ И ФОРМА */
+.container {
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.steps-container,
+.form-container {
+    flex: 1;
+    min-width: 300px;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: none;
+}
+
+.steps-container h2,
+.form-container h2 {
+    font-size: clamp(1.2rem, 3vw, 1.5rem);
+    margin-bottom: 20px;
+    color: white;
+    text-align: center;
+}
+
+.step {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #555;
+    padding-bottom: 15px;
+    gap: 15px;
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    background-color: #29b6f6;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.step-content {
+    flex: 1;
+}
+
+.step-content h3 {
+    font-size: clamp(1rem, 2.5vw, 1.1rem);
+    margin: 0 0 10px 0;
+    color: #29b6f6;
+}
+
+.step-content p {
+    font-size: clamp(0.8rem, 2vw, 0.9rem);
+    margin: 0;
+}
+
+/* ФОРМА ДОБАВЛЕНИЯ ЖИВОТНОГО */
+.form-container .form-group {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.form-container .form-group label {
+    text-align: left;
+    margin-bottom: 5px;
+}
+
+.submit-button {
+    background-color: #29b6f6;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+    width: 100%;
+}
+
+.submit-button:hover {
+    background-color: #0277bd;
+}
+
+/* ЧЕКБОКСЫ */
+.checkbox-container {
+    display: block;
+    position: relative;
+    padding-left: 35px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-size: clamp(0.9rem, 2vw, 1rem);
+    user-select: none;
+    line-height: 1.4;
+}
+
+.checkbox-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkmark {
+    position: absolute;
+    top: 2px;
+    left: 0;
+    height: 20px;
+    width: 20px;
+    background-color: #eee;
+    border-radius: 4px;
+}
+
+.checkbox-container:hover input ~ .checkmark {
+    background-color: #ccc;
+}
+
+.checkbox-container input:checked ~ .checkmark {
+    background-color: #0277bd;
+}
+
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+    left: 7px;
+    top: 3px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.checkbox-container input:checked ~ .checkmark:after {
+    display: block;
+}
+
+/* ПОДВАЛ */
+.footer {
+    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6));
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.footer-content p {
+    margin: 8px 0;
+    font-size: clamp(0.8rem, 2vw, 1rem);
+}
+
+/* МЕДИА ЗАПРОСЫ */
+
+/* Планшеты */
+@media (max-width: 768px) {
+    body {
+        background-attachment: scroll;
+    }
+
+    .centered-section {
+        flex-direction: column;
+        margin: 10px;
+        padding: 10px;
+        gap: 15px;
+    }
+    
+    .add-review,
+    .faq-section {
+        min-width: 100%;
+        margin: 10px 0;
+    }
+     .checkbox-container {
+        /* чуть уменьшаем отступ слева, чтобы чекабокс правильно вписался */
+        padding-left: 30px;
+    }
+    .checkmark {
+        /* увеличиваем «коробку» тумблера и чуть подвигаем вверх */
+        top: 2px;
+        left: 0;
+        height: 24px;
+        width: 24px;
+    }
+    .checkmark:after {
+        /* подправляем позицию и размер «галочки» внутри коробки */
+        left: 8px;
+        top: 4px;
+        width: 6px;
+        height: 12px;
+    }
+     .checkbox-container {
+        /* чуть уменьшаем отступ слева, чтобы чекабокс правильно вписался */
+        padding-left: 30px;
+    }
+    .checkmark {
+        /* увеличиваем «коробку» тумблера и чуть подвигаем вверх */
+        top: 2px;
+        left: 0;
+        height: 24px;
+        width: 24px;
+    }
+    .checkmark:after {
+        /* подправляем позицию и размер «галочки» внутри коробки */
+        left: 8px;
+        top: 4px;
+        width: 6px;
+        height: 12px;
+    }
+    #map {
+        height: 250px;
+    }
+    
+    .container {
+        flex-direction: column;
+        padding: 10px;
+        gap: 15px;
+    }
+    
+    .steps-container,
+    .form-container {
+        min-width: 100%;
+        padding: 15px;
+    }
+    
+    .step {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .step-number {
+        align-self: center;
+    }
+    
+    .swiper-button-next,
+    .swiper-button-prev {
+        display: none;
+    }
+    
+    .swiper-slide {
+        min-height: 200px;
+    }
+}
+
+/* Мобильные телефоны */
+@media (max-width: 480px) {
+    .centered-section {
+        margin: 5px;
+        padding: 8px;
+    }
+    
+    .add-review,
+    .faq-section {
+        padding: 15px;
+    }
+    .logo {
+        padding-right: 40px; /* Добавлено */
+    }
+    .review-form {
+        padding: 10px;
+    }
+    
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        font-size: 16px; /* Предотвращает зум на iOS */
+    }
+    
+    #map {
+        height: 200px;
+    }
+    
+    .review-image {
+        height: 100px;
+    }
+}
+
+/* Очень маленькие экраны */
+@media (max-width: 320px) {
+    .centered-section {
+        margin: 2px;
+        padding: 5px;
+    }
+    
+    .add-review,
+    .faq-section {
+        padding: 10px;
+    }
+     .checkbox-container {
+        /* чуть уменьшаем отступ слева, чтобы чекабокс правильно вписался */
+        padding-left: 30px;
+    }
+    .checkmark {
+        /* увеличиваем «коробку» тумблера и чуть подвигаем вверх */
+        top: 2px;
+        left: 0;
+        height: 24px;
+        width: 24px;
+    }
+    .checkmark:after {
+        /* подправляем позицию и размер «галочки» внутри коробки */
+        left: 8px;
+        top: 4px;
+        width: 6px;
+        height: 12px;
+    }
+    .form-group {
+        margin-bottom: 10px;
+    }
+    
+    #map {
+        height: 180px;
+    }
+    
+    .step-number {
+        width: 35px;
+        height: 35px;
+        font-size: 16px;
+    }
+}
