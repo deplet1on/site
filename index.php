@@ -311,11 +311,13 @@ try {
 <noscript><div><img src="https://mc.yandex.ru/watch/102377866" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
 <!-- /Yandex.Metrika counter -->
 </noscript>
+<!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-SFL7Y734H5"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
-  function gtag(){ dataLayer.push(arguments); }
+  function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
+
   gtag('config', 'G-SFL7Y734H5');
 </script>
 </head>

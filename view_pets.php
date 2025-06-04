@@ -184,6 +184,32 @@ $lost_animals = $lost_stmt->fetchAll(PDO::FETCH_ASSOC);
             }
         }
     </style>
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript" >
+   (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+   m[i].l=1*new Date();
+   for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+   k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+   (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+
+   ym(102377866, "init", {
+        clickmap:true,
+        trackLinks:true,
+        accurateTrackBounce:true
+   });
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/102377866" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
+</noscript>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SFL7Y734H5"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-SFL7Y734H5');
+</script>
 </head>
 <body style="display: flex; flex-direction: column; min-height: 100vh;">
 <header>
@@ -196,6 +222,7 @@ $lost_animals = $lost_stmt->fetchAll(PDO::FETCH_ASSOC);
                 <li><a href="add_pet.php">Добавить пропавшее животное</a></li>
                 <li><a href="view_pets.php">Список пропавших и найденных животных</a></li>
                 <li><a href="found_pet.php">Сообщить о найденном животном</a></li>
+                <li><a href="shelter.php">Приюты</a></li>
             </ul>
         </nav>
     </div>
