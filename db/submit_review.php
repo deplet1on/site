@@ -106,8 +106,8 @@ if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
 
 try {
     // Подготовка SQL запроса
-    $sql = "INSERT INTO reviews (name, review, rating, photo, created_at) VALUES (?, ?, ?, ?, NOW())";
-    $stmt = $pdo->prepare($sql);
+    $stmt = $pdo->prepare("INSERT INTO reviews (name, review, rating, photo, status, created_at) VALUES (?, ?, ?, ?, 'pending', NOW())");
+
     
     // Выполнение запроса
     $stmt->execute([

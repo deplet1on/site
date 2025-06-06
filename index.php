@@ -16,7 +16,7 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
     // ИСПРАВЛЕННЫЙ ЗАПРОС (название таблицы в нижнем регистре)
-    $stmt = $pdo->query("SELECT * FROM reviews  ORDER BY created_at DESC LIMIT 10");
+    $stmt = $pdo->query("SELECT * FROM reviews WHERE status = 'approved' ORDER BY created_at DESC LIMIT 10");
     $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $reviews = [];
@@ -47,7 +47,7 @@ try {
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     
-    <style>
+   <style>
         /* Адаптивные исправления */
         .header-container {
             display: flex;
@@ -195,6 +195,23 @@ try {
             text-decoration: underline;
         }
         
+        /* ИСПРАВЛЕНИЕ: Стили для текста под формами */
+        .form-text,
+        small.form-text,
+        .text-muted {
+            color: #ccc !important;
+            font-size: 0.875rem;
+            margin-top: 5px;
+            display: block;
+        }
+        
+        .character-counter {
+            color: #ccc !important;
+            font-size: 0.875rem;
+            margin-top: 5px;
+            text-align: right;
+        }
+        
         /* Адаптация для планшетов */
         @media (max-width: 768px) {
             .privacy-toggle {
@@ -324,7 +341,7 @@ try {
 <body>
 <header>
     <div class="header-container">
-        <div class="logo">Поиск хвостиков</div>
+        <div class="logo"><a href="index.php" style="color: white; text-decoration: none;">Поиск хвостиков</a></div>
         <button class="nav-toggle" aria-label="Меню">☰</button>
         <nav class="main-nav">
             <ul>
