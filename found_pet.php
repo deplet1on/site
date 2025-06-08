@@ -173,9 +173,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $longitude = $_POST['longitude'] ?? null;
 
         // Вставка в БД
-        $stmt = $pdo->prepare("INSERT INTO found_pets (species, description, email, `approximate address`, date, photo, latitude, longitude) 
-                               VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$species, $description, $email, $approximate_address, $date, $photoPath, $latitude, $longitude]);
+        $stmt = $pdo->prepare("INSERT INTO found_pets (species, description, email, `approximate address`, date, photo, latitude, longitude, status) 
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$species, $description, $email, $approximate_address, $date, $photoPath, $latitude, $longitude, 'pending']);
 
         // Отправка письма на email пользователя
         $subject = "Ваш запрос о найденном животном";

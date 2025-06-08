@@ -4,10 +4,10 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 require_once 'db/bd.php';
 
-$found_stmt = $pdo->query("SELECT * FROM found_pets");
+$found_stmt = $pdo->query("SELECT * FROM found_pets WHERE status = 'approved'");
 $found_pets = $found_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$lost_stmt = $pdo->query("SELECT * FROM lost_animals");
+$lost_stmt = $pdo->query("SELECT * FROM lost_animals WHERE status = 'approved'");
 $lost_animals = $lost_stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
