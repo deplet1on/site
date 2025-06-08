@@ -1,0 +1,52 @@
+*** Begin Patch
+*** Update File: admin.php
+
+@@ // Обработка редактирования найденного животного
+ // Обработка редактирования найденного животного
++// --- Обработка действий для найденных животных START
++if (isset($_POST['action']) && isset($_POST['type']) && $_POST['type'] === 'found_pet') {
++    $pet_id = (int)$_POST['pet_id'];
++
++    if ($_POST['action'] === 'approve') {
++        $stmt = $pdo->prepare("UPDATE found_pets SET status = 'approved' WHERE id = ?");
++        $stmt->execute([$pet_id]);
++        $success_message = "Объявление о найденном животном одобрено!";
++    }
++    elseif ($_POST['action'] === 'reject') {
++        $stmt = $pdo->prepare("UPDATE found_pets SET status = 'rejected' WHERE id = ?");
++        $stmt->execute([$pet_id]);
++        $success_message = "Объявление о найденном животном отклонено!";
++    }
++    elseif ($_POST['action'] === 'delete') {
++        $stmt = $pdo->prepare("SELECT photo_path FROM found_pets WHERE id = ?");
++        $stmt->execute([$pet_id]);
++        $pet_data = $stmt->fetch(PDO::FETCH_ASSOC);
++
++        $stmt = $pdo->prepare("DELETE FROM found_pets WHERE id = ?");
++        $stmt->execute([$pet_id]);
++
++        if ($pet_data && !empty($pet_data['photo_path']) && file_exists($pet_data['photo_path'])) {
++            unlink($pet_data['photo_path']);
++        }
++        $success_message = "Объявление о найденном животном удалено!";
++    }
++}
++// --- Обработка действий для найденных животных END
+
+@@ $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
+-$reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
++$reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
++
++// Получение найденных животных
++try {
++    $stmt = $pdo->query("SHOW COLUMNS FROM found_pets LIKE 'status'");
++    if ($stmt->rowCount() == 0) {
++        $pdo->exec("ALTER TABLE found_pets ADD COLUMN status ENUM('pending','approved','rejected') DEFAULT 'pending'");
++    }
++    $stmt = $pdo->query("SELECT * FROM found_pets ORDER BY created_at DESC");
++    $found_pets = $stmt->fetchAll(PDO::FETCH_ASSOC);
++} catch (PDOException $e) {
++    $found_pets = [];
++}
+
+*** End Patch
