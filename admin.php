@@ -97,7 +97,15 @@ if (isset($_POST['action']) && $_POST['type'] === 'review') {
 if (isset($_POST['action']) && $_POST['type'] === 'found_pet') {
     $pet_id = (int)$_POST['pet_id'];
     
-    if ($_POST['action'] === 'delete') {
+    if ($_POST['action'] === 'approve') {
+        $stmt = $pdo->prepare("UPDATE found_pets SET status = 'approved' WHERE id = ?");
+        $stmt->execute([$pet_id]);
+        $success_message = "Объявление о найденном животном одобрено!";
+    } elseif ($_POST['action'] === 'reject') {
+        $stmt = $pdo->prepare("UPDATE found_pets SET status = 'rejected' WHERE id = ?");
+        $stmt->execute([$pet_id]);
+        $success_message = "Объявление о найденном животном отклонено!";
+    } elseif ($_POST['action'] === 'delete') {
         // Получаем путь к фото перед удалением
         $stmt = $pdo->prepare("SELECT photo FROM found_pets WHERE id = ?");
         $stmt->execute([$pet_id]);
@@ -113,6 +121,10 @@ if (isset($_POST['action']) && $_POST['type'] === 'found_pet') {
         }
         
         $success_message = "Объявление о найденном животном удалено!";
+    } elseif ($_POST['action'] === 'mark_found') {
+        $stmt = $pdo->prepare("UPDATE found_pets SET status = 'found' WHERE id = ?");
+        $stmt->execute([$pet_id]);
+        $success_message = "Животное отмечено как возвращенное владельцу!";
     }
 }
 
@@ -194,9 +206,19 @@ if (isset($_POST['action']) && $_POST['action'] === 'edit_lost_pet') {
 $stmt = $pdo->query("SELECT * FROM reviews ORDER BY created_at DESC");
 $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Получение найденных животных
-$stmt = $pdo->query("SELECT * FROM found_pets ORDER BY date DESC");
-$found_pets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Получение найденых животных
+try {
+    // Проверяем, есть ли столбец status, если нет - добавляем его
+    $stmt = $pdo->query("SHOW COLUMNS FROM found_pets LIKE 'status'");
+    if ($stmt->rowCount() == 0) {
+        $pdo->exec("ALTER TABLE found_pets ADD COLUMN status ENUM('pending', 'approved', 'rejected', 'found') DEFAULT 'pending'");
+    }
+    
+    $stmt = $pdo->query("SELECT * FROM found_pets ");
+    $found_pets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $found_pets = [];
+}
 
 // Получение потерявшихся животных
 try {
@@ -485,336 +507,408 @@ if (isset($_GET['logout'])) {
                 </div>
             <?php endif; ?>
 
-            <!-- Вкладка найденных животных -->
-            <?php if ($current_tab === 'found_pets'): ?>
-                <div class="tab-pane fade show active" id="found-pets-tab">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h3><i class="bi bi-heart"></i> Управление найденными животными</h3>
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-outline-primary" onclick="location.reload()">
-                                <i class="bi bi-arrow-clockwise"></i> Обновить
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <?php foreach ($found_pets as $pet): ?>
-                            <div class="col-lg-6 mb-4">
-                                <div class="card">
-                                    <div class="card-header d-flex justify-content-between align-items-center">
-                                        <h5 class="mb-0">
-                                            <i class="bi bi-heart text-success"></i>
-                                            <?= htmlspecialchars($pet['species']) ?>
-                                        </h5>
-                                        <small class="text-muted">ID: <?= $pet['id'] ?></small>
-                                    </div>
-                                    <div class="card-body">
-                                        <?php if (!empty($pet['photo']) && file_exists($pet['photo'])): ?>
-                                            <img src="<?= htmlspecialchars($pet['photo']) ?>" 
-                                                 class="pet-photo mb-3" 
-                                                 alt="Фото найденного животного">
-                                        <?php else: ?>
-                                            <div class="alert alert-light text-center mb-3">
-                                                <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
-                                                <p class="mb-0 text-muted">Фото не загружено</p>
-                                            </div>
-                                        <?php endif; ?>
-                                        
-                                        <p><strong>Описание:</strong> 
-                                            <?= !empty($pet['description']) ? htmlspecialchars($pet['description']) : 'Описание не указано' ?>
-                                        </p>
-                                        <p><strong>Email:</strong> 
-                                            <a href="mailto:<?= htmlspecialchars($pet['email']) ?>">
-                                                <?= htmlspecialchars($pet['email']) ?>
-                                            </a>
-                                        </p>
-                                        <p><strong>Адрес:</strong> <?= htmlspecialchars($pet['approximate address']) ?></p>
-                                        <p><strong>Дата находки:</strong> <?= date('d.m.Y', strtotime($pet['date'])) ?></p>
-                                        
-                                        <?php if (!empty($pet['latitude']) && !empty($pet['longitude'])): ?>
-                                            <p class="coordinates">
-                                                <strong>Координаты:</strong> 
-                                                <?= htmlspecialchars($pet['latitude']) ?>, <?= htmlspecialchars($pet['longitude']) ?>
-                                                <a href="https://yandex.ru/maps/?ll=<?= htmlspecialchars($pet['longitude']) ?>,<?= htmlspecialchars($pet['latitude']) ?>&z=16&pt=<?= htmlspecialchars($pet['longitude']) ?>,<?= htmlspecialchars($pet['latitude']) ?>,pm2rdm" 
-                                                   target="_blank" class="btn btn-sm btn-outline-primary ms-2">
-                                                    <i class="bi bi-geo-alt"></i> Карта
-                                                </a>
-                                            </p>
-                                        <?php endif; ?>
-                                        
-                                        <div class="btn-group w-100" role="group">
-                                            <button type="button" class="btn btn-primary btn-sm" 
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#editFoundModal<?= $pet['id'] ?>">
-                                                <i class="bi bi-pencil"></i> Редактировать
-                                            </button>
-                                            
-                                            <form method="POST" style="display: inline;" class="flex-fill">
-                                                <input type="hidden" name="type" value="found_pet">
-                                                <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
-                                                <input type="hidden" name="action" value="delete">
-                                                <button type="submit" class="btn btn-danger btn-sm w-100" 
-                                                        onclick="return confirm('Удалить объявление о найденном животном?')">
-                                                    <i class="bi bi-trash"></i> Удалить
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Модальное окно редактирования найденного животного -->
-                            <div class="modal fade" id="editFoundModal<?= $pet['id'] ?>" tabindex="-1">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Редактировать найденное животное</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <form method="POST">
-                                            <div class="modal-body">
-                                                <input type="hidden" name="action" value="edit_found_pet">
-                                                <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
-                                                
-                                                <div class="mb-3">
-                                                    <label for="species<?= $pet['id'] ?>" class="form-label">Вид животного:</label>
-                                                    <input type="text" class="form-control" id="species<?= $pet['id'] ?>" 
-                                                           name="species" value="<?= htmlspecialchars($pet['species']) ?>" required>
-                                                </div>
-                                                
-                                                <div class="mb-3">
-                                                    <label for="description<?= $pet['id'] ?>" class="form-label">Описание:</label>
-                                                    <textarea class="form-control" id="description<?= $pet['id'] ?>" 
-                                                              name="description" rows="3"><?= htmlspecialchars($pet['description']) ?></textarea>
-                                                </div>
-                                                
-                                                <div class="mb-3">
-                                                    <label for="email<?= $pet['id'] ?>" class="form-label">Email:</label>
-                                                    <input type="email" class="form-control" id="email<?= $pet['id'] ?>" 
-                                                           name="email" value="<?= htmlspecialchars($pet['email']) ?>" required>
-                                                </div>
-                                                
-                                                <div class="mb-3">
-                                                    <label for="address<?= $pet['id'] ?>" class="form-label">Адрес:</label>
-                                                    <input type="text" class="form-control" id="address<?= $pet['id'] ?>" 
-                                                           name="approximate_address" value="<?= htmlspecialchars($pet['approximate address']) ?>">
-                                                </div>
-                                                
-                                                <div class="mb-3">
-                                                    <label for="date<?= $pet['id'] ?>" class="form-label">Дата находки:</label>
-                                                    <input type="date" class="form-control" id="date<?= $pet['id'] ?>" 
-                                                           name="date" value="<?= $pet['date'] ?>">
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                                                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-
-                    <?php if (empty($found_pets)): ?>
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i> Нет объявлений о найденных животных.
-                        </div>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
-
-            <!-- Вкладка потерявшихся животных -->
-            <?php if ($current_tab === 'lost_pets'): ?>
-                <div class="tab-pane fade show active" id="lost-pets-tab">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h3><i class="bi bi-search-heart"></i> Управление потерявшимися животными</h3>
-                        <div class="btn-group" role="group">
-                            <input type="radio" class="btn-check" name="lostradio" id="lostradio1" autocomplete="off" checked>
-                            <label class="btn btn-outline-primary" for="lostradio1">Все</label>
-                            <input type="radio" class="btn-check" name="lostradio" id="lostradio2" autocomplete="off">
-                            <label class="btn btn-outline-warning" for="lostradio2">На модерации</label>
-                            <input type="radio" class="btn-check" name="lostradio" id="lostradio3" autocomplete="off">
-                            <label class="btn btn-outline-success" for="lostradio3">Одобрены</label>
-                            <input type="radio" class="btn-check" name="lostradio" id="lostradio4" autocomplete="off">
-                            <label class="btn btn-outline-info" for="lostradio4">Найдены</label>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <?php foreach ($lost_pets as $pet): ?>
-                            <div class="col-lg-6 mb-4 lost-pet-card" data-status="<?= $pet['status'] ?? 'pending' ?>">
-                                <div class="card">
-                                    <div class="card-header d-flex justify-content-between align-items-center">
-                                        <h5 class="mb-0">
-                                            <i class="bi bi-search-heart text-warning"></i>
-                                            <?= htmlspecialchars($pet['animal_type']) ?>
-                                        </h5>
-                                        <div>
-                                            <span class="badge bg-<?= 
-                                                ($pet['status'] ?? 'pending') === 'approved' ? 'success' : 
-                                                (($pet['status'] ?? 'pending') === 'rejected' ? 'danger' : 
-                                                (($pet['status'] ?? 'pending') === 'found' ? 'info' : 'warning')) ?>">
-                                                <?= 
-                                                    ($pet['status'] ?? 'pending') === 'approved' ? 'Одобрено' : 
-                                                    (($pet['status'] ?? 'pending') === 'rejected' ? 'Отклонено' : 
-                                                    (($pet['status'] ?? 'pending') === 'found' ? 'Найдено' : 'На модерации')) ?>
-                                            </span>
-                                            <small class="text-muted ms-2">ID: <?= $pet['id'] ?></small>
-                                        </div>
-                                    </div>
-                                    <div class="card-body">
-                                        <?php if (!empty($pet['photo_path']) && file_exists($pet['photo_path'])): ?>
-                                            <img src="<?= htmlspecialchars($pet['photo_path']) ?>" 
-                                                 class="pet-photo mb-3" 
-                                                 alt="Фото потерявшегося животного">
-                                        <?php else: ?>
-                                            <div class="alert alert-light text-center mb-3">
-                                                <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
-                                                <p class="mb-0 text-muted">Фото не загружено</p>
-                                            </div>
-                                        <?php endif; ?>
-                                        
-                                        <p><strong>Описание:</strong> <?= htmlspecialchars($pet['description']) ?></p>
-                                        <p><strong>Владелец:</strong> <?= htmlspecialchars($pet['owner_name']) ?></p>
-                                        <p><strong>Email:</strong> 
-                                            <a href="mailto:<?= htmlspecialchars($pet['owner_email']) ?>">
-                                                <?= htmlspecialchars($pet['owner_email']) ?>
-                                            </a>
-                                        </p>
-                                        <p><strong>Адрес потери:</strong> <?= htmlspecialchars($pet['address']) ?></p>
-                                        <p><strong>Дата потери:</strong> <?= date('d.m.Y', strtotime($pet['lost_date'])) ?></p>
-                                        <p><strong>Дата подачи:</strong> <?= date('d.m.Y H:i', strtotime($pet['created_at'])) ?></p>
-                                        
-                                        <div class="btn-group w-100 mb-2" role="group">
-                                            <?php if (($pet['status'] ?? 'pending') !== 'approved'): ?>
-                                                <form method="POST" style="display: inline;" class="flex-fill">
-                                                    <input type="hidden" name="type" value="lost_pet">
-                                                    <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
-                                                    <input type="hidden" name="action" value="approve">
-                                                    <button type="submit" class="btn btn-success btn-sm w-100" 
-                                                            onclick="return confirm('Одобрить объявление?')">
-                                                        <i class="bi bi-check"></i> Одобрить
-                                                    </button>
-                                                </form>
-                                            <?php endif; ?>
-                                            
-                                            <?php if (($pet['status'] ?? 'pending') !== 'rejected'): ?>
-                                                <form method="POST" style="display: inline;" class="flex-fill">
-                                                    <input type="hidden" name="type" value="lost_pet">
-                                                    <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
-                                                    <input type="hidden" name="action" value="reject">
-                                                    <button type="submit" class="btn btn-warning btn-sm w-100" 
-                                                            onclick="return confirm('Отклонить объявление?')">
-                                                        <i class="bi bi-x"></i> Отклонить
-                                                    </button>
-                                                </form>
-                                            <?php endif; ?>
-                                        </div>
-                                        
-                                        <div class="btn-group w-100" role="group">
-                                            <?php if (($pet['status'] ?? 'pending') !== 'found'): ?>
-                                                <form method="POST" style="display: inline;" class="flex-fill">
-                                                    <input type="hidden" name="type" value="lost_pet">
-                                                    <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
-                                                    <input type="hidden" name="action" value="mark_found">
-                                                    <button type="submit" class="btn btn-info btn-sm w-100" 
-                                                            onclick="return confirm('Отметить как найденное?')">
-                                                        <i class="bi bi-heart-fill"></i> Найдено
-                                                    </button>
-                                                </form>
-                                            <?php endif; ?>
-                                            
-                                            <button type="button" class="btn btn-primary btn-sm" 
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#editLostModal<?= $pet['id'] ?>">
-                                                <i class="bi bi-pencil"></i> Редактировать
-                                            </button>
-                                            
-                                            <form method="POST" style="display: inline;" class="flex-fill">
-                                                <input type="hidden" name="type" value="lost_pet">
-                                                <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
-                                                <input type="hidden" name="action" value="delete">
-                                                <button type="submit" class="btn btn-danger btn-sm w-100" 
-                                                        onclick="return confirm('Удалить объявление?')">
-                                                    <i class="bi bi-trash"></i> Удалить
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Модальное окно редактирования потерявшегося животного -->
-                            <div class="modal fade" id="editLostModal<?= $pet['id'] ?>" tabindex="-1">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Редактировать потерявшееся животное</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <form method="POST">
-                                            <div class="modal-body">
-                                                <input type="hidden" name="action" value="edit_lost_pet">
-                                                <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
-                                                
-                                                <div class="mb-3">
-                                                    <label for="animal_type<?= $pet['id'] ?>" class="form-label">Тип животного:</label>
-                                                    <input type="text" class="form-control" id="animal_type<?= $pet['id'] ?>" 
-                                                           name="animal_type" value="<?= htmlspecialchars($pet['animal_type']) ?>" required>
-                                                </div>
-                                                
-                                                <div class="mb-3">
-                                                    <label for="lost_description<?= $pet['id'] ?>" class="form-label">Описание:</label>
-                                                    <textarea class="form-control" id="lost_description<?= $pet['id'] ?>" 
-                                                              name="description" rows="3"><?= htmlspecialchars($pet['description']) ?></textarea>
-                                                </div>
-                                                
-                                                <div class="mb-3">
-                                                    <label for="owner_name<?= $pet['id'] ?>" class="form-label">Имя владельца:</label>
-                                                    <input type="text" class="form-control" id="owner_name<?= $pet['id'] ?>" 
-                                                           name="owner_name" value="<?= htmlspecialchars($pet['owner_name']) ?>" required>
-                                                </div>
-                                                
-                                                <div class="mb-3">
-                                                    <label for="owner_email<?= $pet['id'] ?>" class="form-label">Email владельца:</label>
-                                                    <input type="email" class="form-control" id="owner_email<?= $pet['id'] ?>" 
-                                                           name="owner_email" value="<?= htmlspecialchars($pet['owner_email']) ?>" required>
-                                                </div>
-                                                
-                                                <div class="mb-3">
-                                                    <label for="lost_address<?= $pet['id'] ?>" class="form-label">Адрес потери:</label>
-                                                    <input type="text" class="form-control" id="lost_address<?= $pet['id'] ?>" 
-                                                           name="address" value="<?= htmlspecialchars($pet['address']) ?>">
-                                                </div>
-                                                
-                                                <div class="mb-3">
-                                                    <label for="lost_date<?= $pet['id'] ?>" class="form-label">Дата потери:</label>
-                                                    <input type="date" class="form-control" id="lost_date<?= $pet['id'] ?>" 
-                                                           name="lost_date" value="<?= $pet['lost_date'] ?>">
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                                                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-
-                    <?php if (empty($lost_pets)): ?>
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i> Нет объявлений о потерявшихся животных.
-                        </div>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
+           <!-- Вкладка найденных животных -->
+<?php if ($current_tab === 'found_pets'): ?>
+    <div class="tab-pane fade show active" id="found-pets-tab">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3><i class="bi bi-search-heart"></i> Управление найденными животными</h3>
+            <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="foundradio" id="foundradio1" autocomplete="off" checked>
+                <label class="btn btn-outline-primary" for="foundradio1">Все</label>
+                <input type="radio" class="btn-check" name="foundradio" id="foundradio2" autocomplete="off">
+                <label class="btn btn-outline-warning" for="foundradio2">На модерации</label>
+                <input type="radio" class="btn-check" name="foundradio" id="foundradio3" autocomplete="off">
+                <label class="btn btn-outline-success" for="foundradio3">Одобрены</label>
+                <input type="radio" class="btn-check" name="foundradio" id="foundradio4" autocomplete="off">
+                <label class="btn btn-outline-info" for="foundradio4">Возвращены</label>
+            </div>
         </div>
+        
+        <div class="row">
+            <?php foreach ($found_pets as $pet): ?>
+                <div class="col-lg-6 mb-4 found-pet-card" data-status="<?= $pet['status'] ?? 'pending' ?>">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-heart text-success"></i>
+                                <?= htmlspecialchars($pet['species']) ?>
+                            </h5>
+                            <div>
+                                <span class="badge bg-<?= 
+                                    ($pet['status'] ?? 'pending') === 'approved' ? 'success' : 
+                                    (($pet['status'] ?? 'pending') === 'rejected' ? 'danger' : 
+                                    (($pet['status'] ?? 'pending') === 'returned' ? 'info' : 'warning')) ?>">
+                                    <?= 
+                                        ($pet['status'] ?? 'pending') === 'approved' ? 'Одобрено' : 
+                                        (($pet['status'] ?? 'pending') === 'rejected' ? 'Отклонено' : 
+                                        (($pet['status'] ?? 'pending') === 'returned' ? 'Возвращено' : 'На модерации')) ?>
+                                </span>
+                                <small class="text-muted ms-2">ID: <?= $pet['id'] ?></small>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <?php if (!empty($pet['photo']) && file_exists($pet['photo'])): ?>
+                                <img src="<?= htmlspecialchars($pet['photo']) ?>" 
+                                     class="pet-photo mb-3" 
+                                     alt="Фото найденного животного">
+                            <?php else: ?>
+                                <div class="alert alert-light text-center mb-3">
+                                    <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
+                                    <p class="mb-0 text-muted">Фото не загружено</p>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <p><strong>Описание:</strong> 
+                                <?= !empty($pet['description']) ? htmlspecialchars($pet['description']) : 'Описание не указано' ?>
+                            </p>
+                            <p><strong>Нашедший:</strong> <?= htmlspecialchars($pet['finder_name'] ?? 'Не указано') ?></p>
+                            <p><strong>Email:</strong> 
+                                <a href="mailto:<?= htmlspecialchars($pet['email']) ?>">
+                                    <?= htmlspecialchars($pet['email']) ?>
+                                </a>
+                            </p>
+                            <p><strong>Адрес:</strong> <?= htmlspecialchars($pet['approximate_address'] ?? $pet['address'] ?? 'Не указан') ?></p>
+                            <p><strong>Дата находки:</strong> <?= date('d.m.Y', strtotime($pet['date'] ?? $pet['found_date'])) ?></p>
+                            <p><strong>Дата подачи:</strong> <?= date('d.m.Y H:i', strtotime($pet['created_at'])) ?></p>
+                            
+                            <?php if (!empty($pet['latitude']) && !empty($pet['longitude'])): ?>
+                                <p class="coordinates">
+                                    <strong>Координаты:</strong> 
+                                    <?= htmlspecialchars($pet['latitude']) ?>, <?= htmlspecialchars($pet['longitude']) ?>
+                                    <a href="https://yandex.ru/maps/?ll=<?= htmlspecialchars($pet['longitude']) ?>,<?= htmlspecialchars($pet['latitude']) ?>&z=16&pt=<?= htmlspecialchars($pet['longitude']) ?>,<?= htmlspecialchars($pet['latitude']) ?>,pm2rdm" 
+                                       target="_blank" class="btn btn-sm btn-outline-primary ms-2">
+                                        <i class="bi bi-geo-alt"></i> Карта
+                                    </a>
+                                </p>
+                            <?php endif; ?>
+                            
+                            <div class="btn-group w-100 mb-2" role="group">
+                                <?php if (($pet['status'] ?? 'pending') !== 'approved'): ?>
+                                    <form method="POST" style="display: inline;" class="flex-fill">
+                                        <input type="hidden" name="type" value="found_pet">
+                                        <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
+                                        <input type="hidden" name="action" value="approve">
+                                        <button type="submit" class="btn btn-success btn-sm w-100" 
+                                                onclick="return confirm('Одобрить объявление?')">
+                                            <i class="bi bi-check"></i> Одобрить
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                                
+                                <?php if (($pet['status'] ?? 'pending') !== 'rejected'): ?>
+                                    <form method="POST" style="display: inline;" class="flex-fill">
+                                        <input type="hidden" name="type" value="found_pet">
+                                        <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
+                                        <input type="hidden" name="action" value="reject">
+                                        <button type="submit" class="btn btn-warning btn-sm w-100" 
+                                                onclick="return confirm('Отклонить объявление?')">
+                                            <i class="bi bi-x"></i> Отклонить
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <div class="btn-group w-100" role="group">
+                                <?php if (($pet['status'] ?? 'pending') !== 'returned'): ?>
+                                    <form method="POST" style="display: inline;" class="flex-fill">
+                                        <input type="hidden" name="type" value="found_pet">
+                                        <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
+                                        <input type="hidden" name="action" value="mark_returned">
+                                        <button type="submit" class="btn btn-info btn-sm w-100" 
+                                                onclick="return confirm('Отметить как возвращенное?')">
+                                            <i class="bi bi-heart-fill"></i> Возвращено
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                                
+                                <button type="button" class="btn btn-primary btn-sm" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editFoundModal<?= $pet['id'] ?>">
+                                    <i class="bi bi-pencil"></i> Редактировать
+                                </button>
+                                
+                                <form method="POST" style="display: inline;" class="flex-fill">
+                                    <input type="hidden" name="type" value="found_pet">
+                                    <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
+                                    <input type="hidden" name="action" value="delete">
+                                    <button type="submit" class="btn btn-danger btn-sm w-100" 
+                                            onclick="return confirm('Удалить объявление о найденном животном?')">
+                                        <i class="bi bi-trash"></i> Удалить
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Модальное окно редактирования найденного животного -->
+                <div class="modal fade" id="editFoundModal<?= $pet['id'] ?>" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Редактировать найденное животное</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form method="POST">
+                                <div class="modal-body">
+                                    <input type="hidden" name="action" value="edit_found_pet">
+                                    <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
+                                    
+                                    <div class="mb-3">
+                                        <label for="species<?= $pet['id'] ?>" class="form-label">Вид животного:</label>
+                                        <input type="text" class="form-control" id="species<?= $pet['id'] ?>" 
+                                               name="species" value="<?= htmlspecialchars($pet['species']) ?>" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="found_description<?= $pet['id'] ?>" class="form-label">Описание:</label>
+                                        <textarea class="form-control" id="found_description<?= $pet['id'] ?>" 
+                                                  name="description" rows="3"><?= htmlspecialchars($pet['description']) ?></textarea>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="finder_name<?= $pet['id'] ?>" class="form-label">Имя нашедшего:</label>
+                                        <input type="text" class="form-control" id="finder_name<?= $pet['id'] ?>" 
+                                               name="finder_name" value="<?= htmlspecialchars($pet['finder_name'] ?? '') ?>">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="email<?= $pet['id'] ?>" class="form-label">Email:</label>
+                                        <input type="email" class="form-control" id="email<?= $pet['id'] ?>" 
+                                               name="email" value="<?= htmlspecialchars($pet['email']) ?>" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="found_address<?= $pet['id'] ?>" class="form-label">Адрес находки:</label>
+                                        <input type="text" class="form-control" id="found_address<?= $pet['id'] ?>" 
+                                               name="address" value="<?= htmlspecialchars($pet['approximate_address'] ?? $pet['address'] ?? '') ?>">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="found_date<?= $pet['id'] ?>" class="form-label">Дата находки:</label>
+                                        <input type="date" class="form-control" id="found_date<?= $pet['id'] ?>" 
+                                               name="found_date" value="<?= $pet['date'] ?? $pet['found_date'] ?? '' ?>">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="latitude<?= $pet['id'] ?>" class="form-label">Широта:</label>
+                                        <input type="text" class="form-control" id="latitude<?= $pet['id'] ?>" 
+                                               name="latitude" value="<?= htmlspecialchars($pet['latitude'] ?? '') ?>">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="longitude<?= $pet['id'] ?>" class="form-label">Долгота:</label>
+                                        <input type="text" class="form-control" id="longitude<?= $pet['id'] ?>" 
+                                               name="longitude" value="<?= htmlspecialchars($pet['longitude'] ?? '') ?>">
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
+        <?php if (empty($found_pets)): ?>
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> Нет объявлений о найденных животных.
+            </div>
+        <?php endif; ?>
     </div>
+<?php endif; ?>
+
+<!-- Вкладка потерявшихся животных -->
+<?php if ($current_tab === 'lost_pets'): ?>
+    <div class="tab-pane fade show active" id="lost-pets-tab">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3><i class="bi bi-search-heart"></i> Управление потерявшимися животными</h3>
+            <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="lostradio" id="lostradio1" autocomplete="off" checked>
+                <label class="btn btn-outline-primary" for="lostradio1">Все</label>
+                <input type="radio" class="btn-check" name="lostradio" id="lostradio2" autocomplete="off">
+                <label class="btn btn-outline-warning" for="lostradio2">На модерации</label>
+                <input type="radio" class="btn-check" name="lostradio" id="lostradio3" autocomplete="off">
+                <label class="btn btn-outline-success" for="lostradio3">Одобрены</label>
+                <input type="radio" class="btn-check" name="lostradio" id="lostradio4" autocomplete="off">
+                <label class="btn btn-outline-info" for="lostradio4">Найдены</label>
+            </div>
+        </div>
+        
+        <div class="row">
+            <?php foreach ($lost_pets as $pet): ?>
+                <div class="col-lg-6 mb-4 lost-pet-card" data-status="<?= $pet['status'] ?? 'pending' ?>">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-search-heart text-warning"></i>
+                                <?= htmlspecialchars($pet['animal_type']) ?>
+                            </h5>
+                            <div>
+                                <span class="badge bg-<?= 
+                                    ($pet['status'] ?? 'pending') === 'approved' ? 'success' : 
+                                    (($pet['status'] ?? 'pending') === 'rejected' ? 'danger' : 
+                                    (($pet['status'] ?? 'pending') === 'found' ? 'info' : 'warning')) ?>">
+                                    <?= 
+                                        ($pet['status'] ?? 'pending') === 'approved' ? 'Одобрено' : 
+                                        (($pet['status'] ?? 'pending') === 'rejected' ? 'Отклонено' : 
+                                        (($pet['status'] ?? 'pending') === 'found' ? 'Найдено' : 'На модерации')) ?>
+                                </span>
+                                <small class="text-muted ms-2">ID: <?= $pet['id'] ?></small>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <?php if (!empty($pet['photo_path']) && file_exists($pet['photo_path'])): ?>
+                                <img src="<?= htmlspecialchars($pet['photo_path']) ?>" 
+                                     class="pet-photo mb-3" 
+                                     alt="Фото потерявшегося животного">
+                            <?php else: ?>
+                                <div class="alert alert-light text-center mb-3">
+                                    <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
+                                    <p class="mb-0 text-muted">Фото не загружено</p>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <p><strong>Описание:</strong> <?= htmlspecialchars($pet['description']) ?></p>
+                            <p><strong>Владелец:</strong> <?= htmlspecialchars($pet['owner_name']) ?></p>
+                            <p><strong>Email:</strong> 
+                                <a href="mailto:<?= htmlspecialchars($pet['owner_email']) ?>">
+                                    <?= htmlspecialchars($pet['owner_email']) ?>
+                                </a>
+                            </p>
+                            <p><strong>Адрес потери:</strong> <?= htmlspecialchars($pet['address']) ?></p>
+                            <p><strong>Дата потери:</strong> <?= date('d.m.Y', strtotime($pet['lost_date'])) ?></p>
+                            <p><strong>Дата подачи:</strong> <?= date('d.m.Y H:i', strtotime($pet['created_at'])) ?></p>
+                            
+                            <div class="btn-group w-100 mb-2" role="group">
+                                <?php if (($pet['status'] ?? 'pending') !== 'approved'): ?>
+                                    <form method="POST" style="display: inline;" class="flex-fill">
+                                        <input type="hidden" name="type" value="lost_pet">
+                                        <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
+                                        <input type="hidden" name="action" value="approve">
+                                        <button type="submit" class="btn btn-success btn-sm w-100" 
+                                                onclick="return confirm('Одобрить объявление?')">
+                                            <i class="bi bi-check"></i> Одобрить
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                                
+                                <?php if (($pet['status'] ?? 'pending') !== 'rejected'): ?>
+                                    <form method="POST" style="display: inline;" class="flex-fill">
+                                        <input type="hidden" name="type" value="lost_pet">
+                                        <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
+                                        <input type="hidden" name="action" value="reject">
+                                        <button type="submit" class="btn btn-warning btn-sm w-100" 
+                                                onclick="return confirm('Отклонить объявление?')">
+                                            <i class="bi bi-x"></i> Отклонить
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <div class="btn-group w-100" role="group">
+                                <?php if (($pet['status'] ?? 'pending') !== 'found'): ?>
+                                    <form method="POST" style="display: inline;" class="flex-fill">
+                                        <input type="hidden" name="type" value="lost_pet">
+                                        <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
+                                        <input type="hidden" name="action" value="mark_found">
+                                        <button type="submit" class="btn btn-info btn-sm w-100" 
+                                                onclick="return confirm('Отметить как найденное?')">
+                                            <i class="bi bi-heart-fill"></i> Найдено
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                                
+                                <button type="button" class="btn btn-primary btn-sm" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editLostModal<?= $pet['id'] ?>">
+                                    <i class="bi bi-pencil"></i> Редактировать
+                                </button>
+                                
+                                <form method="POST" style="display: inline;" class="flex-fill">
+                                    <input type="hidden" name="type" value="lost_pet">
+                                    <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
+                                    <input type="hidden" name="action" value="delete">
+                                    <button type="submit" class="btn btn-danger btn-sm w-100" 
+                                            onclick="return confirm('Удалить объявление?')">
+                                        <i class="bi bi-trash"></i> Удалить
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Модальное окно редактирования потерявшегося животного -->
+                <div class="modal fade" id="editLostModal<?= $pet['id'] ?>" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Редактировать потерявшееся животное</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form method="POST">
+                                <div class="modal-body">
+                                    <input type="hidden" name="action" value="edit_lost_pet">
+                                    <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
+                                    
+                                    <div class="mb-3">
+                                        <label for="animal_type<?= $pet['id'] ?>" class="form-label">Тип животного:</label>
+                                        <input type="text" class="form-control" id="animal_type<?= $pet['id'] ?>" 
+                                               name="animal_type" value="<?= htmlspecialchars($pet['animal_type']) ?>" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="lost_description<?= $pet['id'] ?>" class="form-label">Описание:</label>
+                                        <textarea class="form-control" id="lost_description<?= $pet['id'] ?>" 
+                                                  name="description" rows="3"><?= htmlspecialchars($pet['description']) ?></textarea>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="owner_name<?= $pet['id'] ?>" class="form-label">Имя владельца:</label>
+                                        <input type="text" class="form-control" id="owner_name<?= $pet['id'] ?>" 
+                                               name="owner_name" value="<?= htmlspecialchars($pet['owner_name']) ?>" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="owner_email<?= $pet['id'] ?>" class="form-label">Email владельца:</label>
+                                        <input type="email" class="form-control" id="owner_email<?= $pet['id'] ?>" 
+                                               name="owner_email" value="<?= htmlspecialchars($pet['owner_email']) ?>" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="lost_address<?= $pet['id'] ?>" class="form-label">Адрес потери:</label>
+                                        <input type="text" class="form-control" id="lost_address<?= $pet['id'] ?>" 
+                                               name="address" value="<?= htmlspecialchars($pet['address']) ?>">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="lost_date<?= $pet['id'] ?>" class="form-label">Дата потери:</label>
+                                        <input type="date" class="form-control" id="lost_date<?= $pet['id'] ?>" 
+                                               name="lost_date" value="<?= $pet['lost_date'] ?>">
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
+        <?php if (empty($lost_pets)): ?>
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> Нет объявлений о потерявшихся животных.
+            </div>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
 
     <!-- Подключение Bootstrap JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
